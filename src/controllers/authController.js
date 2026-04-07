@@ -78,9 +78,9 @@ export const refreshUserSession = async (req, res) => {
 };
 
 export const logoutUser = async (req, res) => {
-  const { sessoinId } = req.cookies;
-  if (sessoinId) {
-    await Session.deleteOne({ _id: sessoinId });
+  const { sessionId } = req.cookies;
+  if (sessionId) {
+    await Session.deleteOne({ _id: sessionId });
   }
 
   clearSessionCookies(res);
