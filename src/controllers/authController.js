@@ -1,7 +1,11 @@
 import createHttpError from 'http-errors';
 import { User } from '../models/user.js';
 import bcrypt from 'bcrypt';
-import { createSession, setSessionCookies } from '../services/auth.js';
+import {
+  clearSessionCookies,
+  createSession,
+  setSessionCookies,
+} from '../services/auth.js';
 import { Session } from '../models/session.js';
 
 export const registerUser = async (req, res) => {
@@ -10,7 +14,7 @@ export const registerUser = async (req, res) => {
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {
-    throw createHttpError(400, 'Email in use  ');
+    throw createHttpError(400, 'Email in use');
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -48,4 +52,37 @@ export const loginUser = async (req, res) => {
   setSessionCookies(res, newSession);
 
   res.status(200).json(user);
+};
+
+export const refreshUserSession = async (req, res) => {
+  const { sessionId, refreshToken } = req.cookies;
+  const session = await Session.findOne({ _id: sessionId, refreshToken });
+
+  if (!session) {
+    throw createHttpError(401, 'Session not found');
+  }
+
+  const refreshTokenExpired =
+    new Date(session.refreshTokenValidUntil) < new Date();
+
+  if (refreshTokenExpired) {
+    throw createHttpError(401, 'Session token expired');
+  }
+
+  await Session.deleteOne({ _id: sessionId, refreshToken });
+  const newSession = await createSession(session.userId);
+
+  setSessionCookies(res, newSession);
+
+  res.status(200).json({ message: 'Session refreshed' });
+};
+
+export const logoutUser = async (req, res) => {
+  const { sessoinId } = req.cookies;
+  if (sessoinId) {
+    await Session.deleteOne({ _id: sessoinId });
+  }
+
+  clearSessionCookies(res);
+  res.status(204).send();
 };
