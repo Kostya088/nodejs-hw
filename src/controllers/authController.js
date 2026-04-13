@@ -117,7 +117,7 @@ export const requestResetEmail = async (req, res) => {
 
   const html = template({
     name: user.username,
-    link: `${process.env.FRONTEND_DOMAIN}/reset-pwd?token=${resetToken}`,
+    link: `${process.env.FRONTEND_DOMAIN}/reset-password?token=${resetToken}`,
   });
 
   try {
